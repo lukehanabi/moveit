@@ -1,5 +1,7 @@
 package com.feedme.moveit;
 
+
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -9,10 +11,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.view.Menu;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
 	
@@ -22,6 +27,9 @@ public class MainActivity extends Activity {
 	PointF mImageSource = new PointF();
 	PointF mImageTarget = new PointF();
 	long mInterpolateTime;
+	Matrix matrix = null;
+	Canvas tempCanvas = null;
+	float rotation = 0;
 	
 	public Handler updateHandler = new Handler(){
         /** Gets called on every message that is received */
@@ -71,20 +79,32 @@ public class MainActivity extends Activity {
 
 	    public Game(Context context) {
 	        super(context);
-	        image = Bitmap.createBitmap(BitmapFactory.decodeResource(this.getResources(), R.drawable.pelu));
+	        matrix = new Matrix();
+	        
+	        Bitmap source = BitmapFactory.decodeResource(this.getResources(), R.drawable.pelu);
+	        image = Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
 	        paint = new Paint();
+	        Bitmap mutableBitmap = image.copy(Bitmap.Config.ARGB_8888, true);
+	        tempCanvas = new Canvas(mutableBitmap);
+	       
 	    }
 
 	    // called every Frame
 	    protected void onDraw(Canvas canvas) {
 
-	        canvas.drawBitmap(image, mImagePos.x, mImagePos.y, paint);
+	        canvas.drawBitmap(image, matrix, paint);
+	        //tempCanvas.drawBitmap(image, mImagePos.x, mImagePos.y, paint);
+	        matrix.reset();
 	    }
 
 	    // called by thread
 	    public void update() {
 	    	final long INTERPOLATION_LENGTH = 2000;
 	        long time = SystemClock.uptimeMillis();
+	       
+	    
+
+	        
 	        if (time - mInterpolateTime > INTERPOLATION_LENGTH) {
 	            mImageSource.set(mImageTarget);
 	            mImageTarget.x = (float)(Math.random() * 400);
@@ -94,10 +114,25 @@ public class MainActivity extends Activity {
 
 	        float t = (float)(time - mInterpolateTime) / INTERPOLATION_LENGTH;
 	        // For some smoothness uncomment this line;
-	        // t = t * t * (3 - 2 * t);
+	         //t = t * t * (3 - 2 * t);
 
 	        mImagePos.x = mImageSource.x + (mImageTarget.x - mImageSource.x) * t;
 	        mImagePos.y = mImageSource.y + (mImageTarget.y - mImageSource.y) * t;
+	        
+	        if (rotation == 360) {
+	        	rotation = 0;
+	        } else {
+	        	rotation = rotation + 15;
+	        }
+
+	        
+	        matrix.postTranslate( mImagePos.x, mImagePos.y );
+	        
+	        matrix.postRotate(rotation, (image.getWidth())/2, (image.getHeight())/2 );
+	        matrix.postTranslate(mImagePos.x,mImagePos.y);
+	        
+	        
+	        
 
 	    }
 	}
